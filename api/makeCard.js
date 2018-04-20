@@ -1,8 +1,12 @@
 require('dotenv').config();
 const AWS = require('aws-sdk');
 const Card = require('vcards-js');
+const base58 = require('../modules/base58');
+const Url = require('../models/url');
 
-const { BUCKET_NAME, IAM_USER_KEY, IAM_USER_SECRET } = process.env;
+const {
+  BUCKET_NAME, IAM_USER_KEY, IAM_USER_SECRET, WEBHOST,
+} = process.env;
 
 const vCard = new Card();
 const s3 = new AWS.S3({
@@ -31,7 +35,7 @@ const makeCard = (req, res) => {
   });
 
   const file = {
-    name: `${Math.random().toString(25).slice(2)}.vcf`,
+    name: `${Math.random().toString(25).slice(2)}-${Math.floor(Date.now() / 1000)}.vcf`,
     data: vCard.getFormattedString(),
   };
 
@@ -46,13 +50,26 @@ const makeCard = (req, res) => {
   uploadCard
     // Add listing to DB
     .then((data) => {
-      console.log(`Success: ${data.Location}`);
-      return data;
+      const cardUrl = data.Location;
+      const id = Math.floor(Date.now() / 100000);
+      const shortUrl = WEBHOST + base58.encode(id);
+      const shortCard = new Url({
+        _id: id,
+        card_url: cardUrl,
+        email: contactInfo.email,
+        created_at: new Date(),
+      });
+      shortCard.save((err) => {
+        if (err) {
+          console.log(err);
+        }
+      });
+      return shortUrl;
     })
     // Return short URL and Token
     .then(data => res.status(200).json({
       success: true,
-      url: data.Location,
+      url: data,
     }))
     .catch((err) => {
       console.log(`Error: ${err}`);
