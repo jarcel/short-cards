@@ -230,7 +230,7 @@ export function CardForm({ onSubmit, isSubmitting, error }: CardFormProps) {
         disabled={isSubmitting}
         className={styles.submitButton}
       >
-        {isSubmitting ? 'Creating...' : 'Create vCard'}
+        {isSubmitting ? 'Creating...' : 'Create short.card'}
       </button>
     </form>
   );

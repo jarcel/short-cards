@@ -30,27 +30,44 @@ function App() {
   };
 
   return (
-    <div className="container">
-      <header className="header">
-        <h1 className="title">Short Cards</h1>
-        <p className="subtitle">Create shareable vCard links in seconds</p>
-      </header>
+    <div className="app">
+      <section className="hero">
+        <div className="heroBackground">
+          <div className="orb orb1" />
+          <div className="orb orb2" />
+          <div className="orb orb3" />
+        </div>
+        <div className="heroContent">
+          <div className="logo">
+            <span className="logoDot" />
+            <span>short.cards</span>
+          </div>
+          <h1 className="title">
+            Contact
+            <span className="titleAccent">Cards</span>
+            Instantly
+          </h1>
+          <div className="tagline">
+            <span className="taglineStep"><span className="taglineNum">01</span>Enter your info</span>
+            <span className="taglineStep"><span className="taglineNum">02</span>Get a <strong>shareable link</strong></span>
+            <span className="taglineStep"><span className="taglineNum">03</span>Anyone can download your short.card</span>
+          </div>
+        </div>
+      </section>
 
-      <main className="main">
-        {shortUrl ? (
-          <SuccessCard shortUrl={shortUrl} onCreateAnother={handleCreateAnother} />
-        ) : (
-          <CardForm
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-            error={error}
-          />
-        )}
-      </main>
-
-      <footer className="footer">
-        <p>Generate vCards on-the-fly with shareable short URLs</p>
-      </footer>
+      <section className="formSection">
+        <div className="formWrapper">
+          {shortUrl ? (
+            <SuccessCard shortUrl={shortUrl} onCreateAnother={handleCreateAnother} />
+          ) : (
+            <CardForm
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              error={error}
+            />
+          )}
+        </div>
+      </section>
     </div>
   );
 }

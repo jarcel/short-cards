@@ -1,35 +1,46 @@
+/* ==========================================================================
+   ADDRESS FIELDS - Neon Slash Design
+   ========================================================================== */
+
 .fieldset {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
+  border: 1px solid var(--gray-300);
+  padding: var(--space-lg);
   margin: 0;
-  background: var(--color-background);
-  transition: border-color var(--transition-fast);
+  background: var(--gray-200);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
 }
 
 .fieldset:focus-within {
-  border-color: var(--color-text-muted);
+  border-color: var(--neon);
 }
 
 .legend {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-text-muted);
-  padding: 0 var(--spacing-sm);
+  letter-spacing: 0.2em;
+  color: var(--gray-500);
+  padding: 0 var(--space-sm);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.fieldset:focus-within .legend {
+  color: var(--neon);
 }
 
 .fields {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--space-md);
 }
 
 .row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-md);
+  gap: var(--space-md);
 }
 
 @media (max-width: 480px) {
@@ -38,6 +49,6 @@
   }
 
   .fieldset {
-    padding: var(--spacing-md);
+    padding: var(--space-md);
   }
 }
