@@ -1,5 +1,5 @@
 import { db } from '../db/index.js';
-import { encode } from '@short-cards/shared';
+import { generateRandomCode } from '@short-cards/shared';
 import type { ContactInfo, Card } from '@short-cards/shared';
 
 interface CardRow {
@@ -58,7 +58,28 @@ function rowToCard(row: CardRow): Card {
   };
 }
 
+function shortCodeExists(shortCode: string): boolean {
+  const row = db.prepare('SELECT 1 FROM cards WHERE short_code = ?').get(shortCode);
+  return row !== undefined;
+}
+
+function generateUniqueShortCode(): string {
+  const maxAttempts = 10;
+
+  for (let i = 0; i < maxAttempts; i++) {
+    const code = generateRandomCode(8);
+    if (!shortCodeExists(code)) {
+      return code;
+    }
+  }
+
+  // Extremely unlikely to reach here with 58^8 possibilities
+  throw new Error('Failed to generate unique short code');
+}
+
 export function createCard(contact: ContactInfo): Card {
+  const shortCode = generateUniqueShortCode();
+
   const insertStmt = db.prepare(`
     INSERT INTO cards (
       short_code, first_name, last_name, middle_name, prefix, suffix,
@@ -73,11 +94,8 @@ export function createCard(contact: ContactInfo): Card {
     )
   `);
 
-  // Generate a temporary short code, then update with the actual one based on ID
-  const tempCode = 'temp_' + Date.now();
-
-  const result = insertStmt.run({
-    short_code: tempCode,
+  insertStmt.run({
+    short_code: shortCode,
     first_name: contact.firstName,
     last_name: contact.lastName,
     middle_name: contact.middleName || null,
@@ -97,12 +115,6 @@ export function createCard(contact: ContactInfo): Card {
     address_country: contact.address?.country || null,
     notes: contact.notes || null,
   });
-
-  const id = result.lastInsertRowid as number;
-  const shortCode = encode(id);
-
-  // Update with the actual short code
-  db.prepare('UPDATE cards SET short_code = ? WHERE id = ?').run(shortCode, id);
 
   return findCardByShortCode(shortCode)!;
 }
