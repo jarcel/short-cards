@@ -1,6 +1,29 @@
 import { db } from '../db/index.js';
 import { generateRandomCode } from '@short-cards/shared';
 import type { ContactInfo, Card } from '@short-cards/shared';
+import { encrypt, decrypt } from '../utils/crypto.js';
+
+// Fields that contain PII and should be encrypted
+const ENCRYPTED_FIELDS = [
+  'first_name',
+  'last_name',
+  'middle_name',
+  'prefix',
+  'suffix',
+  'email',
+  'phone',
+  'cell_phone',
+  'work_phone',
+  'organization',
+  'title',
+  'website',
+  'address_street',
+  'address_city',
+  'address_state',
+  'address_postal_code',
+  'address_country',
+  'notes',
+] as const;
 
 interface CardRow {
   id: number;
@@ -27,34 +50,46 @@ interface CardRow {
   access_count: number;
 }
 
+function decryptRow(row: CardRow): CardRow {
+  const decrypted = { ...row };
+  for (const field of ENCRYPTED_FIELDS) {
+    const value = decrypted[field];
+    if (value) {
+      (decrypted[field] as string) = decrypt(value);
+    }
+  }
+  return decrypted;
+}
+
 function rowToCard(row: CardRow): Card {
+  const decrypted = decryptRow(row);
   return {
-    id: row.id,
-    shortCode: row.short_code,
-    firstName: row.first_name,
-    lastName: row.last_name,
-    middleName: row.middle_name ?? undefined,
-    prefix: row.prefix ?? undefined,
-    suffix: row.suffix ?? undefined,
-    email: row.email ?? undefined,
-    phone: row.phone ?? undefined,
-    cellPhone: row.cell_phone ?? undefined,
-    workPhone: row.work_phone ?? undefined,
-    organization: row.organization ?? undefined,
-    title: row.title ?? undefined,
-    website: row.website ?? undefined,
-    address: (row.address_street || row.address_city || row.address_state || row.address_postal_code || row.address_country)
+    id: decrypted.id,
+    shortCode: decrypted.short_code,
+    firstName: decrypted.first_name,
+    lastName: decrypted.last_name,
+    middleName: decrypted.middle_name ?? undefined,
+    prefix: decrypted.prefix ?? undefined,
+    suffix: decrypted.suffix ?? undefined,
+    email: decrypted.email ?? undefined,
+    phone: decrypted.phone ?? undefined,
+    cellPhone: decrypted.cell_phone ?? undefined,
+    workPhone: decrypted.work_phone ?? undefined,
+    organization: decrypted.organization ?? undefined,
+    title: decrypted.title ?? undefined,
+    website: decrypted.website ?? undefined,
+    address: (decrypted.address_street || decrypted.address_city || decrypted.address_state || decrypted.address_postal_code || decrypted.address_country)
       ? {
-          street: row.address_street ?? undefined,
-          city: row.address_city ?? undefined,
-          state: row.address_state ?? undefined,
-          postalCode: row.address_postal_code ?? undefined,
-          country: row.address_country ?? undefined,
+          street: decrypted.address_street ?? undefined,
+          city: decrypted.address_city ?? undefined,
+          state: decrypted.address_state ?? undefined,
+          postalCode: decrypted.address_postal_code ?? undefined,
+          country: decrypted.address_country ?? undefined,
         }
       : undefined,
-    notes: row.notes ?? undefined,
-    createdAt: row.created_at,
-    accessCount: row.access_count,
+    notes: decrypted.notes ?? undefined,
+    createdAt: decrypted.created_at,
+    accessCount: decrypted.access_count,
   };
 }
 
@@ -77,6 +112,12 @@ function generateUniqueShortCode(): string {
   throw new Error('Failed to generate unique short code');
 }
 
+// Helper to encrypt a value if it exists
+function encryptValue(value: string | undefined | null): string | null {
+  if (!value) return null;
+  return encrypt(value);
+}
+
 export function createCard(contact: ContactInfo): Card {
   const shortCode = generateUniqueShortCode();
 
@@ -96,24 +137,24 @@ export function createCard(contact: ContactInfo): Card {
 
   insertStmt.run({
     short_code: shortCode,
-    first_name: contact.firstName,
-    last_name: contact.lastName,
-    middle_name: contact.middleName || null,
-    prefix: contact.prefix || null,
-    suffix: contact.suffix || null,
-    email: contact.email || null,
-    phone: contact.phone || null,
-    cell_phone: contact.cellPhone || null,
-    work_phone: contact.workPhone || null,
-    organization: contact.organization || null,
-    title: contact.title || null,
-    website: contact.website || null,
-    address_street: contact.address?.street || null,
-    address_city: contact.address?.city || null,
-    address_state: contact.address?.state || null,
-    address_postal_code: contact.address?.postalCode || null,
-    address_country: contact.address?.country || null,
-    notes: contact.notes || null,
+    first_name: encrypt(contact.firstName),
+    last_name: encrypt(contact.lastName),
+    middle_name: encryptValue(contact.middleName),
+    prefix: encryptValue(contact.prefix),
+    suffix: encryptValue(contact.suffix),
+    email: encryptValue(contact.email),
+    phone: encryptValue(contact.phone),
+    cell_phone: encryptValue(contact.cellPhone),
+    work_phone: encryptValue(contact.workPhone),
+    organization: encryptValue(contact.organization),
+    title: encryptValue(contact.title),
+    website: encryptValue(contact.website),
+    address_street: encryptValue(contact.address?.street),
+    address_city: encryptValue(contact.address?.city),
+    address_state: encryptValue(contact.address?.state),
+    address_postal_code: encryptValue(contact.address?.postalCode),
+    address_country: encryptValue(contact.address?.country),
+    notes: encryptValue(contact.notes),
   });
 
   return findCardByShortCode(shortCode)!;
