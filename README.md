@@ -1,13 +1,13 @@
-# Short Cards
+# short.cards
 
-A vCard URL shortener that generates shareable contact card links. Create a digital business card and get a short URL that others can visit to download your vCard.
+Turn contact info into shareable links. Anyone can download your short.card with one tap.
 
 ## Features
 
-- Create vCards with contact information (name, email, phone, organization, address, etc.)
-- Generate short URLs for easy sharing
-- vCards generated on-the-fly (no file storage required)
-- Responsive design with dark mode support
+- Create digital contact cards with full vCard support
+- Generate short URLs with cryptographically random codes
+- Field-level AES-256-GCM encryption for PII at rest
+- vCards generated on-the-fly (no file storage)
 - Self-contained SQLite database
 
 ## Tech Stack
@@ -15,7 +15,7 @@ A vCard URL shortener that generates shareable contact card links. Create a digi
 - **Frontend:** Vite + React 18 + TypeScript + CSS Modules
 - **Backend:** Express + TypeScript
 - **Database:** SQLite (via better-sqlite3)
-- **Shared:** TypeScript types in workspace package
+- **Security:** AES-256-GCM encryption, crypto-random short codes
 
 ## Getting Started
 
@@ -30,8 +30,11 @@ A vCard URL shortener that generates shareable contact card links. Create a digi
 # Install dependencies
 npm install
 
-# Copy environment file
+# Copy environment file and generate encryption key
 cp .env.example .env
+
+# Generate a secure encryption key
+node -e "console.log('ENCRYPTION_KEY=' + require('crypto').randomBytes(32).toString('hex'))" >> .env
 ```
 
 ### Development
@@ -63,7 +66,7 @@ short-cards/
 │   └── shared/           # Shared types and utilities
 │       └── src/
 │           ├── types/    # ContactInfo, API types
-│           └── utils/    # Base58 encoding
+│           └── utils/    # Random code generation
 ├── client/               # React frontend
 │   └── src/
 │       ├── api/          # API client
@@ -74,6 +77,7 @@ short-cards/
         ├── db/           # SQLite setup
         ├── routes/       # API routes
         ├── services/     # Card and vCard services
+        ├── utils/        # Encryption utilities
         └── middleware/   # Validation, error handling
 ```
 
@@ -102,12 +106,12 @@ Response:
 ```json
 {
   "success": true,
-  "shortCode": "2",
-  "shortUrl": "http://localhost:5001/c/2"
+  "shortCode": "2hzV4hzD",
+  "shortUrl": "http://localhost:5001/c/2hzV4hzD"
 }
 ```
 
-### Download vCard
+### Download short.card
 
 ```
 GET /c/:shortCode
@@ -125,6 +129,13 @@ Environment variables (see `.env.example`):
 | `NODE_ENV` | `development` | Environment |
 | `BASE_URL` | `http://localhost:5001` | Base URL for generated links |
 | `DATABASE_PATH` | `server/data/cards.db` | SQLite database path |
+| `ENCRYPTION_KEY` | (required) | AES-256 encryption key for PII |
+
+## Security
+
+- **Random Short Codes:** 8-character codes generated with `crypto.getRandomValues()` prevent enumeration attacks
+- **Encrypted Storage:** All PII fields are AES-256-GCM encrypted at rest in the database
+- **On-the-fly Generation:** vCards are decrypted and generated per-request, never stored as files
 
 ## License
 
